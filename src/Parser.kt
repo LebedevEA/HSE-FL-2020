@@ -19,22 +19,49 @@ class Parser constructor(private var str: String) {
      * L  -> id   | '(' D ')'
      */
     private var pos: Int = 0
+    private var lastSuccess: Int = -1
 
     fun parse(): Boolean {
         skipWhitespace()
-        if (!parseP()) return false
+        if (!parseP()) {
+            printPosInFile(lastSuccess)
+            return false
+        }
         skipWhitespace()
         return pos == str.length
     }
 
+    private fun printPosInFile(p: Int) {
+        var lineNo = 1
+        var linePos = 1
+        for (i in 0 until p) {
+            if (str[i] == '\n') {
+                lineNo++
+                linePos = 1
+            } else {
+                linePos++
+            }
+        }
+        println("Syntax error: line $lineNo, colon $linePos")
+    }
+
     private fun parseP(): Boolean {
+        val initPos = pos
         if (!parseDR()) {
+            pos = initPos
             return false
         }
         skipWhitespace()
         if (pos != str.length) {
-            return parseP()
+            return if (parseP()) {
+                lastSuccess = pos
+                true
+            } else {
+                pos = initPos
+                false
+            }
         }
+        lastSuccess = pos
         return true
     }
 
@@ -42,8 +69,15 @@ class Parser constructor(private var str: String) {
         val initPos = pos
         if (!parseH() || !parseSymb('.')) {
             pos = initPos
-            return parseH() && parseCorkscrew() && parseB() && parseSymb('.')
+            return if (parseH() && parseCorkscrew() && parseB() && parseSymb('.')) {
+                lastSuccess = pos
+                true
+            } else {
+                pos = initPos
+                false
+            }
         }
+        lastSuccess = pos
         return true
     }
 
@@ -59,11 +93,11 @@ class Parser constructor(private var str: String) {
             pos = initPos
             if (!parseItem()) {
                 pos = initPos
-                skipWhitespace()
                 return false
             }
         }
         skipWhitespace()
+        lastSuccess = pos
         return true
     }
 
@@ -80,6 +114,7 @@ class Parser constructor(private var str: String) {
             }
         }
         skipWhitespace()
+        lastSuccess = pos
         return true
     }
 
@@ -87,6 +122,7 @@ class Parser constructor(private var str: String) {
         val initPos = pos
         if (pos < str.length && str[pos++] == ch) {
             skipWhitespace()
+            lastSuccess = pos
             return true
         }
         pos = initPos
@@ -101,6 +137,7 @@ class Parser constructor(private var str: String) {
         if (found != null) {
             pos += found.range.last + 1
             skipWhitespace()
+            lastSuccess = pos
             return true
         }
         pos = initPos
@@ -114,6 +151,7 @@ class Parser constructor(private var str: String) {
         if (found != null && found.range.first - pos == 0) {
             pos = found.range.last + 1
             skipWhitespace()
+            lastSuccess = pos
             return true
         }
         pos = initPos
