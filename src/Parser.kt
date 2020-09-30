@@ -24,7 +24,7 @@ class Parser constructor(private var str: String) {
                 linePos++
             }
         }
-        return linePos to lineNo
+        return lineNo to linePos
     }
 
     private fun parseP(): Boolean {
