@@ -4,17 +4,16 @@ class Parser constructor(private var str: String) {
     private var pos: Int = 0
     private var lastSuccess: Int = -1
 
-    fun parse(): Boolean {
+    fun parse(): Pair<Int, Int>? {
         skipWhitespace()
-        if (!parseP()) {
-            printPosInFile(lastSuccess)
-            return false
+        if (str.isNotEmpty() && !parseP()) {
+            return getPosInFile(lastSuccess)
         }
         skipWhitespace()
-        return pos == str.length
+        return null
     }
 
-    private fun printPosInFile(p: Int) {
+    private fun getPosInFile(p: Int): Pair<Int, Int> {
         var lineNo = 1
         var linePos = 1
         for (i in 0 until p) {
@@ -25,7 +24,7 @@ class Parser constructor(private var str: String) {
                 linePos++
             }
         }
-        println("Syntax error: line $lineNo, colon $linePos")
+        return linePos to lineNo
     }
 
     private fun parseP(): Boolean {
