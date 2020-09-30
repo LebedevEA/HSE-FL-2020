@@ -1,23 +1,6 @@
 import java.lang.Integer.min
 
 class Parser constructor(private var str: String) {
-    /*
-     * P = program
-     * DR = def or relation
-     * H = head
-     * B = body
-     * D = disjunction
-     * K = conjunction
-     * L = literal | id
-     *
-     * P  -> DR P | eps
-     * DR -> H .  | H :- B .
-     * H  -> id
-     * B  -> D
-     * D  -> (K;)* K
-     * K  -> (L,)* L
-     * L  -> id   | '(' D ')'
-     */
     private var pos: Int = 0
     private var lastSuccess: Int = -1
 
