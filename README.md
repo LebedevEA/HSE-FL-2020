@@ -1,5 +1,7 @@
-# HSE-FL-2020
-Formal languages and grammatical homework
+# Simplified prolog parser
 
-* Инструкция по сборке
-??
+### Инструкция по сборке
+- Установить IDEA
+- Создать проект на Kotlin
+- Закинуть туда 2 файла
+- Запустить :)
