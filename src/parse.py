@@ -101,13 +101,13 @@ def p_error(p):
 
 parser = yacc.yacc()
 
-# filename = argv[0]
-filename = input("Input filename: ")
+filename = argv[1]
+# filename = input("Input filename: ")
 
 with open(filename, 'r') as file:
     result = parser.parse(file.read())
     with open(filename + ".out", 'w') as outFile:
-        outFile.write(printNode(result))
+        outFile.write(printNode(result) + "\n")
 
 
 #  Тут возникает shift/reduce conflict, он возникает потому что когда парсится '(' `ATOM` ')' <...>
