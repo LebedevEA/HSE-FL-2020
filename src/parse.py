@@ -85,7 +85,7 @@ def p_EXPR(p):
 def p_ATOM(p):
     """ ATOM : ID
              | ID ATOM
-             | ID LBR ATOM RBR """
+             | ID LBR BRACKETED_ATOM RBR """
     if len(p) == 2:
         p[0] = Node(None, "ID = " + p[1], None)
     elif len(p) == 3:
@@ -94,6 +94,17 @@ def p_ATOM(p):
         p[0] = Node(Node(None, "ID = " + p[1], None), "AtomSeq", p[3])
     else:
         assert ()
+
+
+def p_BRACKETED_ATOM(p):
+    """ BRACKETED_ATOM : ATOM
+                       | LBR BRACKETED_ATOM RBR """
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4:
+        p[0] = Node(p[2], "AtomGroup", None)
+    else:
+        assert()
 
 
 def p_error(p):
@@ -114,4 +125,3 @@ with open(filename, 'r') as file:
     except SyntaxException:
         with open(filename + ".out", 'w') as outFile:
             outFile.write("Syntax error.\n")
-
