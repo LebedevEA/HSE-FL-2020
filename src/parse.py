@@ -85,16 +85,13 @@ def p_EXPR(p):
 def p_ATOM(p):
     """ ATOM : ID
              | ID ATOM
-             | LBR ATOM RBR ATOM
-             | LBR ATOM RBR """
+             | ID LBR ATOM RBR """
     if len(p) == 2:
         p[0] = Node(None, "ID = " + p[1], None)
     elif len(p) == 3:
         p[0] = Node(Node(None, "ID = " + p[1], None), "AtomSeq", p[2])
-    elif len(p) == 4:
-        p[0] = Node(p[2], "AtomGroup", None)
     elif len(p) == 5:
-        p[0] = Node(Node(p[2], "AtomGroup", None), "AtomSeq", p[4])
+        p[0] = Node(Node(None, "ID = " + p[1], None), "AtomSeq", p[3])
     else:
         assert ()
 
@@ -118,9 +115,3 @@ with open(filename, 'r') as file:
         with open(filename + ".out", 'w') as outFile:
             outFile.write("Syntax error.\n")
 
-
-#  Тут возникает shift/reduce conflict, он возникает потому что когда парсится '(' `ATOM` ')' <...>
-# он хочет распарсить `ATOM` как expression (то есть reduce), а второй вариант - просто
-# сделать shift -- взять точку, а потом перейдет туда, где всё будет редуцировано в
-# `ATOM`, ну, или почти, в любом случае, это уже редуцируется в expression, поэтому нам хватает
-# shift, поэтому конфликт разрешается правильно. (Ну и вообще, делать здесь expression бесполезно)
