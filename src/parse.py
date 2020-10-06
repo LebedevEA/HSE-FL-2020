@@ -84,23 +84,32 @@ def p_EXPR(p):
 
 def p_ATOM(p):
     """ ATOM : ID
-             | ID ATOM
-             | ID LBR BRACKETED_ATOM RBR """
+             | ID ATOM_TAIL """
     if len(p) == 2:
         p[0] = Node(None, "ID = " + p[1], None)
     elif len(p) == 3:
         p[0] = Node(Node(None, "ID = " + p[1], None), "AtomSeq", p[2])
-    elif len(p) == 5:
-        p[0] = Node(Node(None, "ID = " + p[1], None), "AtomSeq", p[3])
     else:
         assert ()
+
+
+def p_ATOM_TAIL(p):
+    """ ATOM_TAIL : ATOM
+                  | LBR BRACKETED_ATOM RBR
+                  | LBR BRACKETED_ATOM RBR ATOM_TAIL """
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4:
+        p[0] = Node(p[2], "AtomGroup", None)
+    elif len(p) == 5:
+        p[0] = Node(Node(p[2], "AtomGroup", None), "AtomSeq", p[4])
 
 
 def p_BRACKETED_ATOM(p):
     """ BRACKETED_ATOM : ATOM
                        | LBR BRACKETED_ATOM RBR """
     if len(p) == 2:
-        p[0] = p[1]
+        p[0] = Node(p[1], "AtomGroup", None)
     elif len(p) == 4:
         p[0] = Node(p[2], "AtomGroup", None)
     else:
@@ -125,3 +134,16 @@ with open(filename, 'r') as file:
     except SyntaxException:
         with open(filename + ".out", 'w') as outFile:
             outFile.write("Syntax error.\n")
+#
+# while True:
+#     try:
+#         s = input("prolog> ")
+#     except EOFError:
+#         break
+#     if not s:
+#         continue
+#     try:
+#         result = parser.parse(s)
+#         print(printNode(result))
+#     except:
+#         print("Syntax error.")
