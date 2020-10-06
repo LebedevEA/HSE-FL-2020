@@ -113,10 +113,10 @@ with open(filename, 'r') as file:
     try:
         result = parser.parse(file.read())
         with open(filename + ".out", 'w') as outFile:
-            outFile.write(printNode(result))
+            outFile.write(printNode(result) + '\n')
     except SyntaxException:
         with open(filename + ".out", 'w') as outFile:
-            outFile.write("Syntax error.")
+            outFile.write("Syntax error.\n")
 
 
 #  Тут возникает shift/reduce conflict, он возникает потому что когда парсится '(' `ATOM` ')' <...>
