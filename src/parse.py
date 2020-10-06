@@ -5,6 +5,10 @@ import ply.yacc as yacc
 from lex import tokens
 
 
+class SyntaxException(Exception):
+    pass
+
+
 class Node:
     def __init__(self, left, string, right):
         self.left = left
@@ -96,7 +100,7 @@ def p_ATOM(p):
 
 
 def p_error(p):
-    print("Syntax error")
+    raise SyntaxException
 
 
 parser = yacc.yacc()
@@ -104,10 +108,15 @@ parser = yacc.yacc()
 filename = argv[1]
 # filename = input("Input filename: ")
 
+
 with open(filename, 'r') as file:
-    result = parser.parse(file.read())
-    with open(filename + ".out", 'w') as outFile:
-        outFile.write(printNode(result) + "\n")
+    try:
+        result = parser.parse(file.read())
+        with open(filename + ".out", 'w') as outFile:
+            outFile.write(printNode(result))
+    except SyntaxException:
+        with open(filename + ".out", 'w') as outFile:
+            outFile.write("Syntax error.")
 
 
 #  Тут возникает shift/reduce conflict, он возникает потому что когда парсится '(' `ATOM` ')' <...>
