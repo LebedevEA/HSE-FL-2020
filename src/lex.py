@@ -1,5 +1,9 @@
 import ply.lex as lex
 
+class SyntaxException(Exception):
+    pass
+
+
 tokens = [
     # 'NUM',
     'ID',
@@ -13,7 +17,7 @@ tokens = [
 
 
 def t_ID(t):
-    r"""[0-9a-zA-Z_]+"""
+    r"""[a-zA-Z_][0-9a-zA-Z_]*"""
     return t
 
 
@@ -32,8 +36,7 @@ def t_newline(t):
 
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
-    t.lexer.skip(1)
+    raise SyntaxException
 
 
 lexer = lex.lex()

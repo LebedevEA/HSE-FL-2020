@@ -2,11 +2,7 @@ from sys import argv
 
 import ply.yacc as yacc
 
-from lex import tokens
-
-
-class SyntaxException(Exception):
-    pass
+from lex import tokens, SyntaxException
 
 
 class Node:
