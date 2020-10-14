@@ -1,4 +1,4 @@
-# Prolog combinator parser
+# Prolog combinator parser ~с ужасным AST~
 
 ## Сборка
 - Вроде бы должно просто собираться через `stack build`, `stack test`
