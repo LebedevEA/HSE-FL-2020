@@ -123,7 +123,6 @@ unit_typeExpr = do
               )
           )
 
-
 unit_type :: Assertion
 unit_type = do
   let parser = parseType
@@ -152,3 +151,21 @@ unit_module = do
   fail "mod ule name."
   fail "module 123name."
   fail "module name!"
+
+unit_list :: Assertion
+unit_list = do
+  let parser = parseList
+  let success = testParserSuccess parser
+  let fail = testParserFailure parser
+  success "[]" (ListDefDef DefNil)
+  success "[a]" (ListDefDef $ DefConsA a DefNil)
+  success "[A,B]" (ListDefDef (DefConsV (Variable "A") (DefConsV (Variable "B") DefNil)))
+  success "[a (b c), B, C]" (ListDefDef $ DefConsA (Seq a (Seq b c)) (DefConsV (Variable "B") (DefConsV (Variable "C") DefNil)))
+  success "[a | T]" (ListDefHT $ HTListAtomTail a (Variable "T"))
+  success "[ [a] | T ]" (ListDefHT $ HTListListTail (ListDefDef $ DefConsA a DefNil) (Variable "T"))
+  success "[ [H | T], a ]" (ListDefDef $ DefConsL (ListDefHT $ HTListVarTail (Variable "H") (Variable "T")) (DefConsA a DefNil))
+  fail "[a | a]"
+  fail "[A,B,]"
+  fail "[A,B"
+  fail "]["
+  
