@@ -7,7 +7,6 @@ import PrologAst
 testParser :: Show a => Parser a -> String -> IO ()
 testParser parser string = print $ runParser parser $ Text string (1, 1)
 
-
 -- TODO (fmap (safeFoldl1 (++))) to one func
 mspaces = (fconcat $ many1 $ commentsingle (string "--")) <|> (fconcat $ many1 $ commentmulti (string "/*") (string "*/")) <|> spaces
 
@@ -59,7 +58,9 @@ atom =
   ret $ Atom i at
 
 atomtail :: Parser (Either Atom String)
-atomtail = (fmap Left $ mbbr $ br atom) <|> (fmap Right var) <|> (fmap Left $ fmap (\x -> Atom x []) ident)
+atomtail = (fmap Left $ mbbr $ br atom) <|>
+           (fmap Right var) <|>
+           (fmap Left $ fmap (\x -> Atom x []) ident)
   
 relation :: Parser Relation
 relation =
@@ -107,10 +108,8 @@ ident =
   mspaces `seq` \_ ->
   (lower <|> char '_') `seq` \b ->
   many (alphanum <|> char '_') `seq` \e ->
-  case (b:e) of
-    "type"    -> Parser $ \t -> Left $ SyntaxError (pos t) "Unexpected value type"
-    "module"    -> Parser $ \t -> Left $ SyntaxError (pos t) "Unexpected value module"
-    otherwise -> ret $ b:e
+  (guard (\x -> (x /= "type" && x /= "module")) % b:e) `seq` \_ ->
+  ret $ b:e
 
 var :: Parser String
 var =

@@ -70,6 +70,11 @@ seq p f = Parser $ \t ->
 ret :: a -> Parser a
 ret x = Parser $ \t -> Right (x, t)
 
+guard :: (a -> Bool) -> a -> Parser a
+guard cond x = if cond x
+               then ret x
+               else Parser $ \t -> Left $ SyntaxError (pos t) "Guard broken"
+
 many :: Parser a -> Parser [a]
 many p = Parser $ \t ->
   case runParser p t of
