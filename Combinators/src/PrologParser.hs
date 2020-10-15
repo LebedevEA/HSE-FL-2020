@@ -13,33 +13,7 @@ mspaces = (fconcat $ many1 $ commentsingle (string "--")) <|> (fconcat $ many1 $
 
 m1spaces = (fconcat $ many1 $ commentsingle (string "--")) <|> (fconcat $ many1 $ commentmulti (string "/*") (string "*/")) <|> (many1 $ foldl1 (<|>) $ map char "\t\n ")
 
-token :: Parser Token
-token = (
-    ident `seq` \i ->
-    ret $ TIdent i
-  ) <|> (
-    var `seq` \v ->
-    ret $ TVar v
-  ) <|> (
-    char ',' `seq` \_ ->
-    ret Comma
-  ) <|> (
-    char ';' `seq` \_ ->
-    ret Semi
-  ) <|> (
-    char '(' `seq` \_ ->
-    ret Lbr
-  ) <|> (
-    char ')' `seq` \_ ->
-    ret Rbr
-  ) <|> (
-    char '.' `seq` \_ ->
-    ret Dot
-  ) <|> (
-    string ":-" `seq` \_ ->
-    ret Cork
-  )
-
+br = bracketed' mspaces (string "(") (string ")")
   
 prog :: Parser PrologProgram
 prog =
@@ -69,30 +43,12 @@ typ =
   ret $ TypeDef i tb
 
 typeExpr :: Parser Type
-typeExpr = (
-    mspaces `seq` \_ ->
-    char '(' `seq` \_ ->
-    typeExpr `seq` \te ->
-    mspaces `seq` \_ ->
-    char ')' `seq` \_ ->
-    ret te
-  ) <|> (
-    binopr mspaces Arrow te (string "->")
-  )
-      where te =
-              (fmap Var var) <|>
-              (fmap TAtom atom) <|>
-              (
-                mspaces `seq` \_ ->
-                char '(' `seq` \_ ->
-                typeExpr `seq` \f ->
-                mspaces `seq` \_ ->
-                char ')' `seq` \_ ->
-                typeExpr `seq` \s ->
-                mspaces `seq` \_ ->
-                char ')' `seq` \_ ->
-                ret $ Arrow f s
-              )
+typeExpr = br typeExpr <|> binopr mspaces Arrow te (string "->")
+         where te = fmap Var var <|> fmap TAtom atom  <|> (
+                        (br typeExpr) `seq` \f ->
+                        (br typeExpr) `seq` \s ->
+                        ret $ Arrow f s
+                      )
 
 atom :: Parser Atom
 atom =
@@ -102,12 +58,7 @@ atom =
 
 atomtail :: Parser [Either Atom String]
 atomtail = (
-    mspaces `seq` \_ ->
-    char '(' `seq` \_ ->
-    atomtail `seq` \at ->
-    mspaces `seq` \_ ->
-    char ')' `seq` \_ ->
-    mspaces `seq` \_ ->
+    br atomtail `seq` \at ->
     (quest atomtail) `seq` \atl ->
     case atl of
       Nothing -> ret at
@@ -121,17 +72,7 @@ atomtail = (
                                    Left  err       -> Left err
                                    Right (res, t') -> Right ((Right res), t')
               Right (res, t') -> Right ((Left res), t')
-          atom' = (
-              mspaces `seq` \_ ->
-              char '(' `seq` \_ ->
-              atom' `seq` \a ->
-              mspaces `seq` \_ ->
-              char ')' `seq` \_ ->
-              ret a
-            ) <|> (
-              atom `seq` \a ->
-              ret a
-            )
+          atom' = br atom <|> atom 
   
 relation :: Parser Relation
 relation =
@@ -157,16 +98,7 @@ conj :: Parser RelationBody
 conj = binopr mspaces Conj expr (char ',')
 
 expr :: Parser RelationBody
-expr = (
-    mspaces `seq` \_ ->
-    char '(' `seq` \_ ->
-    disj `seq` \a ->
-    mspaces `seq` \_ ->
-    char ')' `seq` \_ ->
-    ret a
-  ) <|> (
-    fmap RAtom atom
-  )
+expr = br disj <|> fmap RAtom atom
 
 ident :: Parser String
 ident =

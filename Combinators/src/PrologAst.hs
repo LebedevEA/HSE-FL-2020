@@ -1,15 +1,5 @@
 module PrologAst where
 
-data Token = TIdent String
-           | TVar String
-           | Comma
-           | Semi
-           | Lbr
-           | Rbr
-           | Dot
-           | Cork
-           deriving (Eq, Show)
-
 data PrologProgram = Program {
         pModule :: Maybe String
       , types   :: [TypeDef]

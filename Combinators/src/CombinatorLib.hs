@@ -161,6 +161,15 @@ binop fold1 userspaces f expr' op' = fmap (fold1 f) $ list expr op
                                where expr = skip userspaces expr'
                                      op   = skip userspaces op'
 
+bracketed' :: Parser String -> Parser String -> Parser String -> Parser a -> Parser a
+bracketed' spaces' open close a=
+  spaces' `seq` \_ ->
+  open `seq` \_ ->
+  a `seq` \r ->
+  spaces' `seq` \_ ->
+  close `seq` \_ ->
+  ret r
+
 binopl = binop foldl1
 binopr = binop foldr1
 
