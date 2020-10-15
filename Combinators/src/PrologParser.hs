@@ -1,7 +1,7 @@
 module PrologParser where
 
 import Prelude hiding (seq, fmap, array, any)
-import CombinatorLib
+import CombinatorLib hiding (list)
 import PrologAst
 
 testParser :: Show a => Parser a -> String -> IO ()
@@ -67,12 +67,11 @@ atomtail = (
     array mspaces eas mspaces
   )
     where eas = Parser $ \t ->
-            case runParser atom' t of
+            case runParser (br atom <|> atom) t of
               Left _          -> case runParser var t of
                                    Left  err       -> Left err
                                    Right (res, t') -> Right ((Right res), t')
               Right (res, t') -> Right ((Left res), t')
-          atom' = br atom <|> atom 
   
 relation :: Parser Relation
 relation =
@@ -99,6 +98,21 @@ conj = binopr mspaces Conj expr (char ',')
 
 expr :: Parser RelationBody
 expr = br disj <|> fmap RAtom atom
+
+list :: Parser Atom
+list = (fmap makelist $ arrayBr mspaces (string "[") el (string ",") (string "]")) <|>
+       (fmap makelist $ bracketed' mspaces (string "[") (string "]") htlist)
+      where el = fmap Left atom <|> fmap Right var <|> fmap Left list
+            htlist =
+              el `seq` \el1 ->
+              mspaces `seq` \_ ->
+              char '|' `seq` \_ ->
+              el `seq` \el2 ->
+              ret [el1, el2]
+              
+makelist :: [Either Atom String] -> Atom
+makelist []     = nil
+makelist (a:as) = cons a $ Left $ makelist as
 
 ident :: Parser String
 ident =

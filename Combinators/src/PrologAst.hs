@@ -25,3 +25,6 @@ data RelationBody = RAtom Atom
                   | Conj RelationBody RelationBody
                   | Disj RelationBody RelationBody
                   deriving (Eq, Show)
+
+cons x y = Atom "cons" [x, y]
+nil      = Atom "nil" []
