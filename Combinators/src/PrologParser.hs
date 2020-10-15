@@ -14,6 +14,12 @@ mspaces = (fconcat $ many1 $ commentsingle (string "--")) <|> (fconcat $ many1 $
 m1spaces = (fconcat $ many1 $ commentsingle (string "--")) <|> (fconcat $ many1 $ commentmulti (string "/*") (string "*/")) <|> (many1 $ foldl1 (<|>) $ map char "\t\n ")
 
 br = bracketed' mspaces (string "(") (string ")")
+
+mbbr :: Parser a -> Parser a
+mbbr p = Parser $ \t ->
+  case runParser (br p) t of
+    Left  _ -> runParser p t
+    Right e -> runParser (mbbr (br p)) t
   
 prog :: Parser PrologProgram
 prog =
@@ -43,35 +49,17 @@ typ =
   ret $ TypeDef i tb
 
 typeExpr :: Parser Type
-typeExpr = br typeExpr <|> binopr mspaces Arrow te (string "->")
-         where te = fmap Var var <|> fmap TAtom atom  <|> (
-                        (br typeExpr) `seq` \f ->
-                        (br typeExpr) `seq` \s ->
-                        ret $ Arrow f s
-                      )
+typeExpr = binopr mspaces Arrow te (string "->") <|> mbbr (br typeExpr)
+         where te = fmap Var var <|> fmap TAtom atom <|> (mbbr $ br typeExpr)
 
 atom :: Parser Atom
 atom =
   ident `seq` \i ->
-  atomtail `seq` \at ->
+  many atomtail `seq` \at ->
   ret $ Atom i at
 
-atomtail :: Parser [Either Atom String]
-atomtail = (
-    br atomtail `seq` \at ->
-    (quest atomtail) `seq` \atl ->
-    case atl of
-      Nothing -> ret at
-      Just as -> ret (at ++ as)
-  ) <|> (
-    array mspaces eas mspaces
-  )
-    where eas = Parser $ \t ->
-            case runParser (br atom <|> atom) t of
-              Left _          -> case runParser var t of
-                                   Left  err       -> Left err
-                                   Right (res, t') -> Right ((Right res), t')
-              Right (res, t') -> Right ((Left res), t')
+atomtail :: Parser (Either Atom String)
+atomtail = (fmap Left $ mbbr $ br atom) <|> (fmap Right var) <|> (fmap Left $ fmap (\x -> Atom x []) ident)
   
 relation :: Parser Relation
 relation =

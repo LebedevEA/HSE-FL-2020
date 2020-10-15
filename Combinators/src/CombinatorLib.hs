@@ -5,7 +5,7 @@ import Prelude hiding (seq, fmap, array, any)
 newtype Parser a = Parser { runParser :: Text -> Either SyntaxError (a, Text) }
 
 data SyntaxError = SyntaxError { errPos :: Pos, errName :: String }
-                 deriving Show
+                 deriving (Show, Eq)
 
 type Col = Integer
 type Line = Integer
@@ -13,7 +13,7 @@ type Line = Integer
 type Pos = (Col, Line)
 
 data Text = Text { str :: String, pos :: Pos }
-          deriving Show
+          deriving (Show, Eq)
 
 infixl 3 <|>
 

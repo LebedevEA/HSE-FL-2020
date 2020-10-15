@@ -21,6 +21,12 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- hedgehog
+- HUnit
+- tasty
+- tasty-hedgehog
+- tasty-hunit
+- tasty-discover
 
 library:
   source-dirs: src
@@ -38,7 +44,7 @@ executables:
 
 tests:
   Combinators-test:
-    main:                Spec.hs
+    main:                Test.hs
     source-dirs:         test
     ghc-options:
     - -threaded
