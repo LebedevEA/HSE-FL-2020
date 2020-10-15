@@ -41,6 +41,11 @@ string (x:xs) = Parser $ \t ->
     Right res -> Right res
     Left _    -> runParser q t
 
+whitespace :: Parser String
+whitespace = many $ foldl1 (<|>) $ map char "\t\n "
+
+ws = whitespace
+
 digit :: Parser Char
 digit = foldl1 (<|>) $ map char "0123456789"
 
@@ -85,17 +90,17 @@ list elem sep =
   elem `seq` \h ->
   fmap (h:) $ (many $ sep `seq` \_ -> elem)
   
-arrayBr :: Parser String -> Parser el -> Parser Char -> Parser String -> Parser String -> Parser [el]
-arrayBr lbr el ws sep rbr =
+arrayBr :: Parser String -> Parser el -> Parser String -> Parser String -> Parser [el]
+arrayBr lbr el sep rbr =
   lbr `seq` \_ ->
-  (many ws) `seq` \_ ->
-  array el ws sep `seq` \res ->
-  (many ws) `seq` \_ ->
+  ws `seq` \_ ->
+  array el sep `seq` \res ->
+  ws `seq` \_ ->
   rbr `seq` \_ ->
   ret res
 
-array :: Parser el -> Parser Char -> Parser String -> Parser [el]
-array el' ws' sep' =
+array :: Parser el -> Parser String -> Parser [el]
+array el' sep' =
   list el sep
     where el  = ws `seq` \_ ->
                 el' `seq` \res ->
@@ -105,7 +110,6 @@ array el' ws' sep' =
                 sep' `seq` \res ->
                 ws `seq` \_ ->
                 ret res
-          ws  = many ws'
 
 commentmulti :: Parser String -> Parser String -> Parser String
 commentmulti open close =

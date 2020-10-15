@@ -5,7 +5,7 @@ import CombinatorLib
 testParser :: Show a => Parser a -> String -> IO ()
 testParser parser string = print $ runParser parser $ Text string (1, 1)
 
-parseArray = arrayBr (string "[") (char 'e') (char ' ') (string ",") (string "]")
+parseArray = arrayBr (string "[") (char 'e') (string ",") (string "]")
 
 main :: IO ()
 main = do
