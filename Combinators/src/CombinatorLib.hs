@@ -27,6 +27,13 @@ char c = Parser $ \t ->
     (x:xs) | x == c -> Right (c, Text xs $ incPos x $ pos t)
     (x:_)           -> Left $ SyntaxError (pos t) $ "Unexpected symbol " ++ [x]
     []              -> Left $ SyntaxError (pos t) $ "Unexpected EoF"
+
+string :: String -> Parser String
+string []     = Parser $ \t -> Right ("", t)
+string (x:xs) = Parser $ \t ->
+  case runParser (char x) t of
+    Left err        -> Left err
+    Right (res, t') -> runParser (fmap (res:) $ string xs) t'
                              
 (<|>) :: Parser a -> Parser a -> Parser a
 (<|>) p q = Parser $ \t ->
@@ -88,11 +95,8 @@ arrayBr lbr el ws sep rbr =
   ret res
 
 array :: Parser el -> Parser Char -> Parser String -> Parser [el]
-array el' ws' sep' = Parser $ \t ->
-  case runParser el t of
-      Left  _         -> Right ([], t)
-      Right (res, t') ->
-        runParser (fmap (res:) $ (many (sep `seq` \_ -> el))) t'
+array el' ws' sep' =
+  list el sep
     where el  = ws `seq` \_ ->
                 el' `seq` \res ->
                 ws `seq` \_ ->
@@ -125,7 +129,7 @@ any :: Parser Char
 any = Parser $ \(Text (x:xs) pos) -> Right (x, Text xs $ incPos x pos)
 
 -- skipuntil :: Parser a -> Parser String
--- until endl = Parser $ \t ->
+-- skipuntil endl = Parser $ \t ->
 --   case runParser endl t of
 --     Left _ -> 
 
