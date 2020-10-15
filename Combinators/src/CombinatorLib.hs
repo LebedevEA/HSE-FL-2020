@@ -114,14 +114,18 @@ array el' sep' =
 commentmulti :: Parser String -> Parser String -> Parser String
 commentmulti open close =
   open `seq` \o ->
-  (fmap (foldl1 (++)) $ many inner) `seq` \res ->
+  (fmap (safeFoldl1 (++)) $ many inner) `seq` \res ->
   close `seq` \c ->
   ret $ o ++ res ++ c
   where inner = anyBut' `seq` \l ->
-                fmap (foldl1 (++)) $ many $ commentmulti open close `seq` \m ->
-                anyBut' `seq` \r ->
-                ret $ (l:m) ++ [r]
+                (fmap (safeFoldl1 (++)) $ many $ commentmulti open close) `seq` \m ->
+                ret $ (l:m)
         anyBut' = anyBut (open <|> close)
+
+
+safeFoldl1 :: ([a] -> [a] -> [a]) -> [[a]] -> [a]
+safeFoldl1 _ [] = []
+safeFoldl1 f xs = foldl1 f xs
 
 anyBut :: Parser String -> Parser Char
 anyBut s = Parser $ \t ->
@@ -130,7 +134,10 @@ anyBut s = Parser $ \t ->
     Right (str, _) -> Left $ SyntaxError (pos t) $ "String " ++ str ++ " is unexpected!"
 
 any :: Parser Char
-any = Parser $ \(Text (x:xs) pos) -> Right (x, Text xs $ incPos x pos)
+any = Parser $ \(Text str pos) ->
+  case str of
+    x:xs -> Right (x, Text xs $ incPos x pos)
+    []   -> Left $ SyntaxError (pos) $ "Unexpected EoF"
 
 -- skipuntil :: Parser a -> Parser String
 -- skipuntil endl = Parser $ \t ->
