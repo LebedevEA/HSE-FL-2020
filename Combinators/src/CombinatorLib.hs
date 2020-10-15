@@ -17,13 +17,14 @@ data Text = Text { str :: String, pos :: Pos }
 
 infixl 3 <|>
 
-incCol :: Pos -> Pos
-incCol (col, line) = (col + 1, line)
+incPos :: Char -> Pos -> Pos
+incPos x (col, line) | x == '\n' = (1, line + 1)
+                     | otherwise = (col + 1, line)
 
 char :: Char -> Parser Char
 char c = Parser $ \t ->
   case str t of
-    (x:xs) | x == c -> Right (c, Text xs $ incCol $ pos t)
+    (x:xs) | x == c -> Right (c, Text xs $ incPos x $ pos t)
     (x:_)           -> Left $ SyntaxError (pos t) $ "Unexpected symbol " ++ [x]
     []              -> Left $ SyntaxError (pos t) $ "Unexpected EoF"
                              
@@ -77,18 +78,17 @@ list elem sep =
   elem `seq` \h ->
   fmap (h:) $ (many $ sep `seq` \_ -> elem)
   
-arrayBr :: Parser lbr -> Parser el -> Parser ws -> Parser sep -> Parser rbr -> Parser [el]
+arrayBr :: Parser String -> Parser el -> Parser Char -> Parser String -> Parser String -> Parser [el]
 arrayBr lbr el ws sep rbr =
   lbr `seq` \_ ->
-  ws `seq` \_ ->
+  (many ws) `seq` \_ ->
   array el ws sep `seq` \res ->
-  ws `seq` \_ ->
+  (many ws) `seq` \_ ->
   rbr `seq` \_ ->
   ret res
 
---                   TODO  Single
-array :: Parser el -> Parser ws -> Parser sep -> Parser [el]
-array el' ws sep' = Parser $ \t ->
+array :: Parser el -> Parser Char -> Parser String -> Parser [el]
+array el' ws' sep' = Parser $ \t ->
   case runParser el t of
       Left  _         -> Right ([], t)
       Right (res, t') ->
@@ -100,26 +100,36 @@ array el' ws sep' = Parser $ \t ->
           sep = ws `seq` \_ ->
                 sep' `seq` \res ->
                 ws `seq` \_ ->
-                ret res 
+                ret res
+          ws  = many ws'
 
---                                Single
-comment :: Parser String -> Parser Char -> Parser String -> Parser String
-comment open any' close =
+commentmulti :: Parser String -> Parser String -> Parser String
+commentmulti open close =
   open `seq` \o ->
   (fmap (foldl1 (++)) $ many inner) `seq` \res ->
   close `seq` \c ->
   ret $ o ++ res ++ c
   where inner = anyBut `seq` \l ->
-                fmap (foldl1 (++)) $ many $ comment open any' close `seq` \m ->
+                fmap (foldl1 (++)) $ many $ commentmulti open close `seq` \m ->
                 anyBut `seq` \r ->
-                ret $ l ++ m ++ r
-        anyBut = Parser $ \t -> case runParser close t of
+                ret $ (l:m) ++ [r]
+        anyBut = Parser $ \t -> case runParser close t of -- TODO выделить в отдельную функцию
                                   Left _  -> case runParser open t of
                                                Left _  ->
                                                  runParser any t
                                                Right _ ->
                                                  Left $ SyntaxError (pos t) "Missmatch brackets in comments!"
                                   Right _ -> Left $ SyntaxError (pos t) "Missmatch brackets in comments!"
-        any = many any'
 
+any :: Parser Char
+any = Parser $ \(Text (x:xs) pos) -> Right (x, Text xs $ incPos x pos)
 
+-- skipuntil :: Parser a -> Parser String
+-- until endl = Parser $ \t ->
+--   case runParser endl t of
+--     Left _ -> 
+
+-- commentsingle :: Parser String -> ParserString
+-- commentsingle beg =
+--   beg `seq` \b ->
+--   skipuntil '\n' `seq`
