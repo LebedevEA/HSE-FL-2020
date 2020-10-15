@@ -41,10 +41,8 @@ string (x:xs) = Parser $ \t ->
     Right res -> Right res
     Left _    -> runParser q t
 
-whitespace :: Parser String
-whitespace = many $ foldl1 (<|>) $ map char "\t\n "
-
-ws = whitespace
+spaces :: Parser String
+spaces = many $ foldl1 (<|>) $ map char "\t\n "
 
 digit :: Parser Char
 digit = foldl1 (<|>) $ map char "0123456789"
@@ -93,22 +91,22 @@ list elem sep =
 arrayBr :: Parser String -> Parser el -> Parser String -> Parser String -> Parser [el]
 arrayBr lbr el sep rbr =
   lbr `seq` \_ ->
-  ws `seq` \_ ->
+  spaces `seq` \_ ->
   array el sep `seq` \res ->
-  ws `seq` \_ ->
+  spaces `seq` \_ ->
   rbr `seq` \_ ->
   ret res
 
 array :: Parser el -> Parser String -> Parser [el]
 array el' sep' =
   list el sep
-    where el  = ws `seq` \_ ->
+    where el  = spaces `seq` \_ ->
                 el' `seq` \res ->
-                ws `seq` \_ ->
+                spaces `seq` \_ ->
                 ret res
-          sep = ws `seq` \_ ->
+          sep = spaces `seq` \_ ->
                 sep' `seq` \res ->
-                ws `seq` \_ ->
+                spaces `seq` \_ ->
                 ret res
 
 commentmulti :: Parser String -> Parser String -> Parser String
@@ -151,3 +149,10 @@ commentsingle beg =
   beg `seq` \b ->
   (skipuntil $ string "\n") `seq` \e ->
   ret $ b ++ e
+
+binop :: ((expr -> expr -> expr) -> [expr] -> expr) -> (expr -> expr -> expr) -> Parser expr -> Parser op -> Parser expr
+binop fold1 f expr op = fmap (fold1 f) $ list expr op
+
+binopl = binop foldl1
+binopr = binop foldr1
+
