@@ -7,6 +7,7 @@ import PrologAst
 testParser :: Show a => Parser a -> String -> IO ()
 testParser parser string = print $ runParser parser $ Text string (1, 1)
 
+
 -- TODO (fmap (safeFoldl1 (++))) to one func
 mspaces = (fconcat $ many1 $ commentsingle (string "--")) <|> (fconcat $ many1 $ commentmulti (string "/*") (string "*/")) <|> spaces
 
@@ -89,26 +90,31 @@ expr :: Parser RelationBody
 expr = br disj <|> fmap RAtom atom
 
 list :: Parser Atom
-list = (fmap makelist $ arrayBr mspaces (string "[") el (string ",") (string "]")) <|>
-       (fmap makelist $ bracketed' mspaces (string "[") (string "]") htlist)
+list = (fmap makelist1 $ arrayBr mspaces (string "[") el (string ",") (string "]")) <|>
+       (fmap makelist2 $ bracketed' mspaces (string "[") (string "]") htlist)
       where el = fmap Left atom <|> fmap Right var <|> fmap Left list
             htlist =
+              mspaces `seq` \_ ->
               el `seq` \el1 ->
               mspaces `seq` \_ ->
               char '|' `seq` \_ ->
               var `seq` \v ->
               ret [el1, Right v]
               
-makelist :: [Either Atom String] -> Atom
-makelist []     = nil
-makelist (a:as) = cons a $ Left $ makelist as
+makelist1 :: [Either Atom String] -> Atom
+makelist1 []     = nil
+makelist1 (a:as) = cons a $ Left $ makelist1 as
+
+makelist2 :: [Either Atom String] -> Atom
+makelist2 [h, Right t] = cons h $ Right t
+makelist2 _            = undefined
 
 ident :: Parser String
 ident =
   mspaces `seq` \_ ->
   (lower <|> char '_') `seq` \b ->
   many (alphanum <|> char '_') `seq` \e ->
-  (guard (\x -> (x /= "type" && x /= "module")) % b:e) `seq` \_ ->
+  (guard (\x -> (x /= "type" && x /= "module")) $ b:e) `seq` \_ ->
   ret $ b:e
 
 var :: Parser String

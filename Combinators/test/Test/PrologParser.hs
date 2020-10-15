@@ -189,7 +189,7 @@ unit_list = do
   success "[a (b c), B, C]" (cons (l $ a [l $ b [l $ c']]) (l $ cons (r "B") (l $ cons (r "C") (l $ nil))))
   success "[a | T]" (cons (l a') (r "T") )
   success "[ [a] | T ]" (cons (l $ cons (l a') (l $ nil)) (r "T") )
-  success "[ [H | T], a ]" (cons (l $ cons (r "H") (r "T")) (l $ cons (l $ a') (l $ nil)) )
+  success "[ [H /* comment *//* */| T], a ]" (cons (l $ cons (r "H") (r "T")) (l $ cons (l $ a') (l $ nil)) )
   fail "[a | a]"
   fail "[A,B,]"
   fail "[A,B"

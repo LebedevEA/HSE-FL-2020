@@ -123,8 +123,10 @@ array userspaces el' sep' = Parser $ \t ->
 
 commentmulti :: Parser String -> Parser String -> Parser String
 commentmulti open close =
+  spaces `seq` \_ ->
   open `seq` \o ->
   (fconcat $ many inner) `seq` \res ->
+  spaces `seq` \_ ->
   close `seq` \c ->
   ret $ o ++ res ++ c
   where inner = anyBut' `seq` \l ->
@@ -155,6 +157,7 @@ skipuntil endl =
 
 commentsingle :: Parser String -> Parser String
 commentsingle beg =
+  spaces `seq` \_ ->
   beg `seq` \b ->
   (skipuntil $ string "\n") `seq` \e ->
   ret $ b ++ e
