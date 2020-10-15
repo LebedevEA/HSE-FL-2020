@@ -7,8 +7,6 @@ import PrologAst
 testParser :: Show a => Parser a -> String -> IO ()
 testParser parser string = print $ runParser parser $ Text string (1, 1)
 
-
--- TODO (fmap (safeFoldl1 (++))) to one func
 mspaces = (fconcat $ many1 $ commentsingle (string "--") <|> commentmulti (string "/*") (string "*/")) <|> spaces
 
 m1spaces = (fconcat $ many1 $ commentsingle (string "--") <|>  commentmulti (string "/*") (string "*/")) <|> (many1 $ foldl1 (<|>) $ map char "\t\n ")
