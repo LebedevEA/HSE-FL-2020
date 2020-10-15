@@ -7,7 +7,8 @@ testParser parser string = print $ runParser parser $ Text string (1, 1)
 
 parseComment = commentmulti (string "/*") $ string "*/"
 parseArray = arrayBr (string "[") (char 'e') (string ",") (string "]")
+parseSingleComment = commentsingle $ string "--"
 
 main :: IO ()
 main = do
-  testParser parseComment "/* a b/* *//**/ c d eeee f */ aa"
+  testParser parseSingleComment "-- hello\nfdsf"

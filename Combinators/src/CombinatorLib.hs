@@ -139,12 +139,15 @@ any = Parser $ \(Text str pos) ->
     x:xs -> Right (x, Text xs $ incPos x pos)
     []   -> Left $ SyntaxError (pos) $ "Unexpected EoF"
 
--- skipuntil :: Parser a -> Parser String
--- skipuntil endl = Parser $ \t ->
---   case runParser endl t of
---     Left _ -> 
+-- including endl
+skipuntil :: Parser String -> Parser String
+skipuntil endl =
+  (many $ anyBut endl) `seq` \r ->
+  endl `seq` \_ ->
+  ret r
 
--- commentsingle :: Parser String -> ParserString
--- commentsingle beg =
---   beg `seq` \b ->
---   skipuntil '\n' `seq`
+commentsingle :: Parser String -> Parser String
+commentsingle beg =
+  beg `seq` \b ->
+  (skipuntil $ string "\n") `seq` \e ->
+  ret $ b ++ e
