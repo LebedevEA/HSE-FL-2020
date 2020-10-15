@@ -44,6 +44,11 @@ string (x:xs) = Parser $ \t ->
 spaces :: Parser String
 spaces = many $ foldl1 (<|>) $ map char "\t\n "
 
+skip ws p = ws `seq` \_ ->
+            p `seq` \r ->
+            ws `seq` \_ ->
+            ret r
+
 digit :: Parser Char
 digit = foldl1 (<|>) $ map char "0123456789"
 
@@ -88,26 +93,17 @@ list elem sep =
   elem `seq` \h ->
   fmap (h:) $ (many $ sep `seq` \_ -> elem)
   
-arrayBr :: Parser String -> Parser el -> Parser String -> Parser String -> Parser [el]
-arrayBr lbr el sep rbr =
+arrayBr :: Parser String -> Parser String -> Parser el -> Parser String -> Parser String -> Parser [el]
+arrayBr userspaces lbr el sep rbr =
   lbr `seq` \_ ->
-  spaces `seq` \_ ->
-  array el sep `seq` \res ->
-  spaces `seq` \_ ->
+  (skip userspaces $ array userspaces el sep) `seq` \res ->
   rbr `seq` \_ ->
   ret res
 
-array :: Parser el -> Parser String -> Parser [el]
-array el' sep' =
-  list el sep
-    where el  = spaces `seq` \_ ->
-                el' `seq` \res ->
-                spaces `seq` \_ ->
-                ret res
-          sep = spaces `seq` \_ ->
-                sep' `seq` \res ->
-                spaces `seq` \_ ->
-                ret res
+array :: Parser String -> Parser el -> Parser String -> Parser [el]
+array userspaces el' sep' = list el sep
+    where el  = skip userspaces el'
+          sep = skip userspaces sep'
 
 commentmulti :: Parser String -> Parser String -> Parser String
 commentmulti open close =
@@ -150,8 +146,10 @@ commentsingle beg =
   (skipuntil $ string "\n") `seq` \e ->
   ret $ b ++ e
 
-binop :: ((expr -> expr -> expr) -> [expr] -> expr) -> (expr -> expr -> expr) -> Parser expr -> Parser op -> Parser expr
-binop fold1 f expr op = fmap (fold1 f) $ list expr op
+binop :: ((expr -> expr -> expr) -> [expr] -> expr) -> Parser String -> (expr -> expr -> expr) -> Parser expr -> Parser op -> Parser expr
+binop fold1 userspaces f expr' op' = fmap (fold1 f) $ list expr op
+                               where expr = skip userspaces expr'
+                                     op   = skip userspaces op'
 
 binopl = binop foldl1
 binopr = binop foldr1
