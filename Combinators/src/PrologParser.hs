@@ -107,8 +107,8 @@ list = (fmap makelist $ arrayBr mspaces (string "[") el (string ",") (string "]"
               el `seq` \el1 ->
               mspaces `seq` \_ ->
               char '|' `seq` \_ ->
-              el `seq` \el2 ->
-              ret [el1, el2]
+              var `seq` \v ->
+              ret [el1, Right v]
               
 makelist :: [Either Atom String] -> Atom
 makelist []     = nil
