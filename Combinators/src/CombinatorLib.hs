@@ -5,7 +5,7 @@ import Prelude hiding (seq, fmap, array, any)
 newtype Parser a = Parser { runParser :: Text -> Either SyntaxError (a, Text) }
 
 data SyntaxError = SyntaxError { errPos :: Pos, errName :: String }
-                 deriving (Show, Eq)
+                 deriving Eq
 
 type Col = Integer
 type Line = Integer
@@ -16,6 +16,17 @@ data Text = Text { str :: String, pos :: Pos }
           deriving (Show, Eq)
 
 infixl 3 <|>
+
+errPrint :: SyntaxError -> String
+errPrint se = "Syntax error: col " ++ (show $ fst $ errPos se) ++
+              ", line " ++ (show $ snd $ errPos se) ++ ". " ++
+              (errName se)
+
+instance Show SyntaxError where
+  show se = errPrint se
+
+makeText :: String -> Text
+makeText s = Text s (1, 1)
 
 incPos :: Char -> Pos -> Pos
 incPos x (col, line) | x == '\n' = (1, line + 1)

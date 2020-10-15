@@ -7,9 +7,13 @@ import PrologAst
 testParser :: Show a => Parser a -> String -> IO ()
 testParser parser string = print $ runParser parser $ Text string (1, 1)
 
-mspaces = (fconcat $ many1 $ commentsingle (string "--") <|> commentmulti (string "/*") (string "*/")) <|> spaces
+mspaces = (fconcat $ many1 $ commentsingle (string "--") <|>
+          commentmulti (string "/*") (string "*/")) <|>
+          spaces
 
-m1spaces = (fconcat $ many1 $ commentsingle (string "--") <|>  commentmulti (string "/*") (string "*/")) <|> (many1 $ foldl1 (<|>) $ map char "\t\n ")
+m1spaces = (fconcat $ many1 $ commentsingle (string "--") <|>
+           commentmulti (string "/*") (string "*/")) <|>
+           (many1 $ foldl1 (<|>) $ map char "\t\n ")
 
 br = bracketed' mspaces (string "(") (string ")")
 
