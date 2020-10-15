@@ -77,8 +77,22 @@ typeExpr = (
     char ')' `seq` \_ ->
     ret te
   ) <|> (
-    binopl mspaces Arrow typeExpr (skip mspaces $ string "->")
+    binopr mspaces Arrow te (string "->")
   )
+      where te =
+              (fmap Var var) <|>
+              (fmap TAtom atom) <|>
+              (
+                mspaces `seq` \_ ->
+                char '(' `seq` \_ ->
+                typeExpr `seq` \f ->
+                mspaces `seq` \_ ->
+                char ')' `seq` \_ ->
+                typeExpr `seq` \s ->
+                mspaces `seq` \_ ->
+                char ')' `seq` \_ ->
+                ret $ Arrow f s
+              )
 
 atom :: Parser Atom
 atom =
@@ -137,10 +151,10 @@ relationbody :: Parser RelationBody
 relationbody = disj
 
 disj :: Parser RelationBody
-disj = binopl mspaces Disj conj (char ';')
+disj = binopr mspaces Disj conj (char ';')
 
 conj :: Parser RelationBody
-conj = binopl mspaces Conj expr (char ',')
+conj = binopr mspaces Conj expr (char ',')
 
 expr :: Parser RelationBody
 expr = (

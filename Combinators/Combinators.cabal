@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       CombinatorLib
+      PrologAst
+      PrologParser
   other-modules:
       Paths_Combinators
   hs-source-dirs:
