@@ -117,17 +117,17 @@ commentmulti open close =
   (fmap (foldl1 (++)) $ many inner) `seq` \res ->
   close `seq` \c ->
   ret $ o ++ res ++ c
-  where inner = anyBut `seq` \l ->
+  where inner = anyBut' `seq` \l ->
                 fmap (foldl1 (++)) $ many $ commentmulti open close `seq` \m ->
-                anyBut `seq` \r ->
+                anyBut' `seq` \r ->
                 ret $ (l:m) ++ [r]
-        anyBut = Parser $ \t -> case runParser close t of -- TODO выделить в отдельную функцию
-                                  Left _  -> case runParser open t of
-                                               Left _  ->
-                                                 runParser any t
-                                               Right _ ->
-                                                 Left $ SyntaxError (pos t) "Missmatch brackets in comments!"
-                                  Right _ -> Left $ SyntaxError (pos t) "Missmatch brackets in comments!"
+        anyBut' = anyBut (open <|> close)
+
+anyBut :: Parser String -> Parser Char
+anyBut s = Parser $ \t ->
+  case runParser s t of
+    Left  _        -> runParser any t
+    Right (str, _) -> Left $ SyntaxError (pos t) $ "String " ++ str ++ " is unexpected!"
 
 any :: Parser Char
 any = Parser $ \(Text (x:xs) pos) -> Right (x, Text xs $ incPos x pos)
