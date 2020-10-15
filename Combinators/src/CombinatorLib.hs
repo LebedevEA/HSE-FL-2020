@@ -52,11 +52,14 @@ skip ws p = ws `seq` \_ ->
 digit :: Parser Char
 digit = foldl1 (<|>) $ map char "0123456789"
 
-alpha :: Parser Char
-alpha = foldl1 (<|>) $ map char "abcdefghijklmnopqrstuvwxyz"
+lower :: Parser Char
+lower = foldl1 (<|>) $ map char "abcdefghijklmnopqrstuvwxyz"
+
+upper :: Parser Char
+upper = foldl1 (<|>) $ map char "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 alphanum :: Parser Char
-alphanum = digit <|> alpha
+alphanum = digit <|> lower <|> upper
 
 seq :: Parser a -> (a -> Parser b) -> Parser b
 seq p f = Parser $ \t ->
@@ -81,12 +84,17 @@ many1 p =
   p `seq` \h ->
   fmap (h:) $ many p
 
+quest :: Parser a -> Parser (Maybe a)
+quest p = Parser $ \t ->
+  case runParser p t of
+    Left  _         -> Right (Nothing, t)
+    Right (res, t') -> Right ((Just res), t')
+
 fmap :: (a -> b) -> Parser a -> Parser b
 fmap f p = Parser $ \t ->
   case runParser p t of
     Right (res, t') -> Right (f res, t')
     Left e          -> Left e
-
 
 list :: Parser elem -> Parser sep -> Parser [elem]
 list elem sep =
@@ -101,25 +109,25 @@ arrayBr userspaces lbr el sep rbr =
   ret res
 
 array :: Parser String -> Parser el -> Parser String -> Parser [el]
-array userspaces el' sep' = list el sep
+array userspaces el' sep' = Parser $ \t ->
+  case runParser (list el sep) t of
+    Right e -> Right e
+    Left  _ -> Right ([], t)
     where el  = skip userspaces el'
           sep = skip userspaces sep'
 
 commentmulti :: Parser String -> Parser String -> Parser String
 commentmulti open close =
   open `seq` \o ->
-  (fmap (safeFoldl1 (++)) $ many inner) `seq` \res ->
+  (fconcat $ many inner) `seq` \res ->
   close `seq` \c ->
   ret $ o ++ res ++ c
   where inner = anyBut' `seq` \l ->
-                (fmap (safeFoldl1 (++)) $ many $ commentmulti open close) `seq` \m ->
+                (fconcat $ many $ commentmulti open close) `seq` \m ->
                 ret $ (l:m)
         anyBut' = anyBut (open <|> close)
 
-
-safeFoldl1 :: ([a] -> [a] -> [a]) -> [[a]] -> [a]
-safeFoldl1 _ [] = []
-safeFoldl1 f xs = foldl1 f xs
+fconcat = fmap $ concat
 
 anyBut :: Parser String -> Parser Char
 anyBut s = Parser $ \t ->
@@ -146,7 +154,9 @@ commentsingle beg =
   (skipuntil $ string "\n") `seq` \e ->
   ret $ b ++ e
 
-binop :: ((expr -> expr -> expr) -> [expr] -> expr) -> Parser String -> (expr -> expr -> expr) -> Parser expr -> Parser op -> Parser expr
+binop :: ((expr -> expr -> expr) -> [expr] -> expr) ->
+         Parser String -> (expr -> expr -> expr) ->
+         Parser expr -> Parser op -> Parser expr
 binop fold1 userspaces f expr' op' = fmap (fold1 f) $ list expr op
                                where expr = skip userspaces expr'
                                      op   = skip userspaces op'
