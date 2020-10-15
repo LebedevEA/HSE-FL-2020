@@ -107,7 +107,10 @@ ident =
   mspaces `seq` \_ ->
   (lower <|> char '_') `seq` \b ->
   many (alphanum <|> char '_') `seq` \e ->
-  ret (b:e)
+  case (b:e) of
+    "type"    -> Parser $ \t -> Left $ SyntaxError (pos t) "Unexpected value type"
+    "module"    -> Parser $ \t -> Left $ SyntaxError (pos t) "Unexpected value module"
+    otherwise -> ret $ b:e
 
 var :: Parser String
 var =
